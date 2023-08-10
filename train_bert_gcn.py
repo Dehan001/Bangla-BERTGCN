@@ -291,7 +291,6 @@ def log_training_results(trainer):
     y_pred_val = np.array(y_pred_val)
     y_true_test = np.array(y_true_test)
     y_pred_test = np.array(y_pred_test)
-    
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
@@ -300,7 +299,6 @@ def log_training_results(trainer):
         y_pred_train_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
         y_pred_val_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
         y_pred_test_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
-    
         train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train_class))
         val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val_class))
         test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test_class))
