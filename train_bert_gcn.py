@@ -241,9 +241,10 @@ def test_step(engine, batch):
 
 
 evaluator = Engine(test_step)
-metrics={
+metrics = {
     'acc': Accuracy(),
-    'nll': Loss(th.nn.NLLLoss())
+    'nll': Loss(th.nn.NLLLoss()),
+    'f1': Loss(lambda y_pred, y_true: f1_score(y_true.cpu().numpy(), y_pred.argmax(axis=1).cpu().numpy(), average='weighted'))
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
