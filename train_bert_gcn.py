@@ -1,3 +1,6 @@
+#three-five multiclass
+#six-> binary classification
+
 import torch as th
 from transformers import AutoModel, AutoTokenizer
 import torch.nn.functional as F
@@ -249,7 +252,6 @@ for n, f in metrics.items():
     f.attach(evaluator, n)
 @trainer.on(Events.EPOCH_COMPLETED)
 
-from sklearn.metrics import roc_auc_score
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
