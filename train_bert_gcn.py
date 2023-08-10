@@ -253,6 +253,8 @@ for n, f in metrics.items():
 @trainer.on(Events.EPOCH_COMPLETED)
 
 
+from sklearn.metrics import roc_auc_score
+
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -287,14 +289,19 @@ def log_training_results(trainer):
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
     
-    train_roc_auc = roc_auc_score(y_true_train, y_pred_train, average=None)  # Calculate for each class
-    val_roc_auc = roc_auc_score(y_true_val, y_pred_val, average=None)  # Calculate for each class
-    test_roc_auc = roc_auc_score(y_true_test, y_pred_test, average=None)  # Calculate for each class
+    # Calculate ROC-AUC scores for each class separately
+    train_roc_auc = []
+    val_roc_auc = []
+    test_roc_auc = []
+    for class_idx in range(y_true_train.shape[1]):
+        train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train[:, class_idx]))
+        val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val[:, class_idx]))
+        test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test[:, class_idx]))
     
-    # Compute weighted average ROC-AUC scores
-    train_roc_auc_avg = sum(train_roc_auc) / len(train_roc_auc)
-    val_roc_auc_avg = sum(val_roc_auc) / len(val_roc_auc)
-    test_roc_auc_avg = sum(test_roc_auc) / len(test_roc_auc)
+    # Compute the average ROC-AUC scores
+    train_roc_auc_avg = np.mean(train_roc_auc)
+    val_roc_auc_avg = np.mean(val_roc_auc)
+    test_roc_auc_avg = np.mean(test_roc_auc)
     
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
