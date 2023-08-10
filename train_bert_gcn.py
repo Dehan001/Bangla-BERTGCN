@@ -243,24 +243,49 @@ def test_step(engine, batch):
 evaluator = Engine(test_step)
 metrics = {
     'acc': Accuracy(),
-    'nll': Loss(th.nn.NLLLoss()),
-    'f1': Loss(lambda y_pred, y_true: f1_score(y_true.cpu().numpy(), y_pred.argmax(axis=1).cpu().numpy(), average='weighted'))
+    'nll': Loss(th.nn.NLLLoss())
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-
-
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
     metrics = evaluator.state.metrics
-    train_acc, train_nll, train_f1 = metrics["acc"], metrics["nll"], metrics["f1"]
+    train_acc, train_nll = metrics["acc"], metrics["nll"]
     evaluator.run(idx_loader_val)
     metrics = evaluator.state.metrics
-    val_acc, val_nll, val_f1 = metrics["acc"], metrics["nll"], metrics["f1"]
+    val_acc, val_nll = metrics["acc"], metrics["nll"]
     evaluator.run(idx_loader_test)
     metrics = evaluator.state.metrics
-    test_acc, test_nll, test_f1 = metrics["acc"], metrics["nll"], metrics["f1"]
+    test_acc, test_nll = metrics["acc"], metrics["nll"]
+    
+    # Compute F1-score manually using scikit-learn
+    y_true_train = []
+    y_pred_train = []
+    y_true_val = []
+    y_pred_val = []
+    y_true_test = []
+    y_pred_test = []
+    
+    for batch in idx_loader_train:
+        y_pred, y_true = test_step(None, batch)
+        y_true_train.extend(y_true.cpu().numpy())
+        y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
+    
+    for batch in idx_loader_val:
+        y_pred, y_true = test_step(None, batch)
+        y_true_val.extend(y_true.cpu().numpy())
+        y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
+    
+    for batch in idx_loader_test:
+        y_pred, y_true = test_step(None, batch)
+        y_true_test.extend(y_true.cpu().numpy())
+        y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
+    
+    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
+    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
+    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
+    
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
