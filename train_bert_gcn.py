@@ -16,7 +16,8 @@ import logging
 from datetime import datetime
 from torch.optim import lr_scheduler
 from model import BertGCN, BertGAT
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+
 
 
 parser = argparse.ArgumentParser()
@@ -236,8 +237,7 @@ def test_step(engine, batch):
         g = g.to(gpu)
         (idx, ) = [x.to(gpu) for x in batch]
         y_pred = model(g, idx)
-        y_true = g.ndata['label'][idx]
-        return y_pred, y_true
+        return y_pred, g.ndata['label'][idx]
 
 
 evaluator = Engine(test_step)
@@ -247,6 +247,7 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
+@trainer.on(Events.EPOCH_COMPLETED)
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -259,37 +260,34 @@ def log_training_results(trainer):
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
     
-    # Compute F1-score manually using scikit-learn
-    y_true_train = []
-    y_pred_train = []
-    y_true_val = []
-    y_pred_val = []
-    y_true_test = []
-    y_pred_test = []
+    y_true_train, y_pred_train = [], []
+    y_true_val, y_pred_val = [], []
+    y_true_test, y_pred_test = [], []
     
     for batch in idx_loader_train:
         y_pred, y_true = test_step(None, batch)
         y_true_train.extend(y_true.cpu().numpy())
-        y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
+        y_pred_train.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
     
     for batch in idx_loader_val:
         y_pred, y_true = test_step(None, batch)
         y_true_val.extend(y_true.cpu().numpy())
-        y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
+        y_pred_val.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
     
     for batch in idx_loader_test:
         y_pred, y_true = test_step(None, batch)
         y_true_test.extend(y_true.cpu().numpy())
-        y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
+        y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
     
-    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
-    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
-    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
+    train_roc_auc = roc_auc_score(y_true_train, y_pred_train, average='weighted', multi_class='ovr')
+    val_roc_auc = roc_auc_score(y_true_val, y_pred_val, average='weighted', multi_class='ovr')
+    test_roc_auc = roc_auc_score(y_true_test, y_pred_test, average='weighted', multi_class='ovr')
     
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
+        .format(trainer.state.epoch, train_acc, train_nll, train_f1, train_roc_auc, val_acc, val_nll, val_f1, val_roc_auc, test_acc, test_nll, test_f1, test_roc_auc)
     )
+    
     if val_acc > log_training_results.best_val_acc:
         logger.info("New checkpoint")
         th.save(
