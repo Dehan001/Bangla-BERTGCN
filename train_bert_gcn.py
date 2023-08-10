@@ -253,8 +253,6 @@ for n, f in metrics.items():
 @trainer.on(Events.EPOCH_COMPLETED)
 
 
-from sklearn.metrics import roc_auc_score
-
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
