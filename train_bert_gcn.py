@@ -248,6 +248,9 @@ metrics = {
 for n, f in metrics.items():
     f.attach(evaluator, n)
 @trainer.on(Events.EPOCH_COMPLETED)
+
+from sklearn.metrics import roc_auc_score
+
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -260,9 +263,12 @@ def log_training_results(trainer):
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
     
-    y_true_train, y_pred_train = [], []
-    y_true_val, y_pred_val = [], []
-    y_true_test, y_pred_test = [], []
+    y_true_train = []
+    y_pred_train = []
+    y_true_val = []
+    y_pred_val = []
+    y_true_test = []
+    y_pred_test = []
     
     for batch in idx_loader_train:
         y_pred, y_true = test_step(None, batch)
@@ -279,13 +285,18 @@ def log_training_results(trainer):
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
     
-    train_roc_auc = roc_auc_score(y_true_train, y_pred_train, average='weighted', multi_class='ovr')
-    val_roc_auc = roc_auc_score(y_true_val, y_pred_val, average='weighted', multi_class='ovr')
-    test_roc_auc = roc_auc_score(y_true_test, y_pred_test, average='weighted', multi_class='ovr')
+    train_roc_auc = roc_auc_score(y_true_train, y_pred_train, average=None)  # Calculate for each class
+    val_roc_auc = roc_auc_score(y_true_val, y_pred_val, average=None)  # Calculate for each class
+    test_roc_auc = roc_auc_score(y_true_test, y_pred_test, average=None)  # Calculate for each class
+    
+    # Compute weighted average ROC-AUC scores
+    train_roc_auc_avg = sum(train_roc_auc) / len(train_roc_auc)
+    val_roc_auc_avg = sum(val_roc_auc) / len(val_roc_auc)
+    test_roc_auc_avg = sum(test_roc_auc) / len(test_roc_auc)
     
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, train_roc_auc, val_acc, val_nll, val_f1, val_roc_auc, test_acc, test_nll, test_f1, test_roc_auc)
+        .format(trainer.state.epoch, train_acc, train_nll, train_f1, train_roc_auc_avg, val_acc, val_nll, val_f1, val_roc_auc_avg, test_acc, test_nll, test_f1, test_roc_auc_avg)
     )
     
     if val_acc > log_training_results.best_val_acc:
