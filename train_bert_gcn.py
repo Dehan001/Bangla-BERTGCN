@@ -250,7 +250,7 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-    
+
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -292,7 +292,6 @@ def log_training_results(trainer):
     y_true_test = np.array(y_true_test)
     y_pred_test = np.array(y_pred_test)
     
-    # Calculate ROC-AUC scores for each class separately
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
