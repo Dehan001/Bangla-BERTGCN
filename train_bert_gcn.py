@@ -250,7 +250,7 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-
+    
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -296,7 +296,8 @@ def log_training_results(trainer):
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
-    for class_idx in range(y_true_train.shape[1]):
+    num_classes = y_true_train.shape[1]
+    for class_idx in range(num_classes):
         train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train[:, class_idx]))
         val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val[:, class_idx]))
         test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test[:, class_idx]))
