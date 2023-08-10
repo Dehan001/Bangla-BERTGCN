@@ -297,10 +297,13 @@ def log_training_results(trainer):
     test_roc_auc = []
     num_classes = y_true_train.shape[1]
     for class_idx in range(num_classes):
-        train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train[:, class_idx]))
-        val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val[:, class_idx]))
-        test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test[:, class_idx]))
+        y_pred_train_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
+        y_pred_val_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
+        y_pred_test_class = test_step(None, (idx,))[0][:, class_idx].cpu().numpy()
     
+        train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train_class))
+        val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val_class))
+        test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test_class))
     # Compute the average ROC-AUC scores
     train_roc_auc_avg = np.mean(train_roc_auc)
     val_roc_auc_avg = np.mean(val_roc_auc)
