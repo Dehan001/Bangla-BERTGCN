@@ -250,8 +250,6 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-@trainer.on(Events.EPOCH_COMPLETED)
-
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
@@ -286,6 +284,13 @@ def log_training_results(trainer):
         y_pred, y_true = test_step(None, batch)
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+    
+    y_true_train = np.array(y_true_train)
+    y_pred_train = np.array(y_pred_train)
+    y_true_val = np.array(y_true_val)
+    y_pred_val = np.array(y_pred_val)
+    y_true_test = np.array(y_true_test)
+    y_pred_test = np.array(y_pred_test)
     
     # Calculate ROC-AUC scores for each class separately
     train_roc_auc = []
