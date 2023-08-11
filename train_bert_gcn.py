@@ -301,9 +301,20 @@ def log_training_results(trainer):
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
 
-    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
-    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
-    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
+  
+    y_true_train_prob = torch.tensor(y_true_train_prob)
+    y_pred_train_prob = torch.tensor(y_pred_train_prob)
+    y_true_val_prob = torch.tensor(y_true_val_prob)
+    y_pred_val_prob = torch.tensor(y_pred_val_prob)
+    y_true_test_prob = torch.tensor(y_true_test_prob)
+    y_pred_test_prob = torch.tensor(y_pred_test_prob)
+
+
+
+  
+    train_f1 = f1_score(y_true_train_prob.argmax(axis=1), y_pred_train_prob.argmax(axis=1))
+    val_f1 = f1_score(y_true_val_prob.argmax(axis=1), y_pred_val_prob.argmax(axis=1))
+    test_f1 = f1_score(y_true_test_prob.argmax(axis=1), y_pred_test_prob.argmax(axis=1))
     val_roc_auc = roc_auc_score(y_true_val, y_pred_val)
     test_roc_auc = roc_auc_score(y_true_test, y_pred_test)
 
