@@ -211,11 +211,13 @@ def train_step(engine, batch):
             y_true = y_true.detach().cpu()
             y_pred = y_pred.argmax(axis=1).detach().cpu()
             train_acc = accuracy_score(y_true, y_pred)
-            train_f1 = f1_score(y_true, y_pred, average='weighted')  # Choose appropriate averaging method
+            train_f1 = f1_score(y_true, y_pred, average='weighted')
+            train_roc_auc = roc_auc_score(y_true, y_pred)
         else:
             train_acc = 1
             train_f1 = 1
-    return train_loss, train_acc, train_f1
+            train_roc_auc = 1
+    return train_loss, train_acc, train_f1, train_roc_auc
 
 
 trainer = Engine(train_step)
@@ -237,16 +239,33 @@ def test_step(engine, batch):
         (idx, ) = [x.to(gpu) for x in batch]
         y_pred = model(g, idx)
         y_true = g.ndata['label'][idx]
-        return y_pred, y_true
+        test_loss = F.nll_loss(y_pred, y_true).item()
+        with th.no_grad():
+            if y_true.sum() > 0:
+                y_true = y_true.detach().cpu()
+                y_pred = y_pred.argmax(axis=1).detach().cpu()
+                test_acc = accuracy_score(y_true, y_pred)
+                test_f1 = f1_score(y_true, y_pred, average='weighted')
+                test_roc_auc = roc_auc_score(y_true, y_pred)
+            else:
+                test_acc = 1
+                test_f1 = 1
+                test_roc_auc = 1
+    return test_loss, test_acc, test_f1, test_roc_auc
 
 
 evaluator = Engine(test_step)
+
 metrics = {
     'acc': Accuracy(),
-    'nll': Loss(th.nn.NLLLoss())
+    'nll': Loss(th.nn.NLLLoss()),
+    'f1': F1Score(average='macro'),
+    'roc_auc': ROCAUCScore()
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
+
+
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
@@ -259,62 +278,40 @@ def log_training_results(trainer):
     evaluator.run(idx_loader_test)
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
-    
-    # Compute F1-score and ROC-AUC using scikit-learn
-    y_true_train_prob = []
-    y_pred_train_prob = []
-    y_true_val_prob = []
-    y_pred_val_prob = []
-    y_true_test_prob = []
-    y_pred_test_prob = []
-    
+
+    # Compute F1-score manually using scikit-learn
+    y_true_train = []
+    y_pred_train = []
+    y_true_val = []
+    y_pred_val = []
+    y_true_test = []
+    y_pred_test = []
+
     for batch in idx_loader_train:
         y_pred, y_true = test_step(None, batch)
-        y_true_train_prob.extend(y_true.cpu().numpy())
-        y_pred_train_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+        y_true_train.extend(y_true.cpu().numpy())
+        y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
 
     for batch in idx_loader_val:
         y_pred, y_true = test_step(None, batch)
-        y_true_val_prob.extend(y_true.cpu().numpy())
-        y_pred_val_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+        y_true_val.extend(y_true.cpu().numpy())
+        y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
 
     for batch in idx_loader_test:
         y_pred, y_true = test_step(None, batch)
-        y_true_test_prob.extend(y_true.cpu().numpy())
-        y_pred_test_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+        y_true_test.extend(y_true.cpu().numpy())
+        y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
 
-    y_true_train_prob = np.array(y_true_train_prob)
-    y_pred_train_prob = np.array(y_pred_train_prob)
-    y_true_val_prob = np.array(y_true_val_prob)
-    y_pred_val_prob = np.array(y_pred_val_prob)
-    y_true_test_prob = np.array(y_true_test_prob)
-    y_pred_test_prob = np.array(y_pred_test_prob)
-    
-    train_f1 = f1_score(y_true_train_prob, y_pred_train_prob.argmax(axis=1), average='weighted')
-    val_f1 = f1_score(y_true_val_prob, y_pred_val_prob.argmax(axis=1), average='weighted')
-    test_f1 = f1_score(y_true_test_prob, y_pred_test_prob.argmax(axis=1), average='weighted')
-    
-    num_classes = y_true_train_prob.shape[1]
-    train_roc_auc = []
-    val_roc_auc = []
-    test_roc_auc = []
-
-    for class_idx in range(num_classes):
-        train_roc_auc.append(roc_auc_score(y_true_train_prob[:, class_idx], y_pred_train_prob[:, class_idx]))
-        val_roc_auc.append(roc_auc_score(y_true_val_prob[:, class_idx], y_pred_val_prob[:, class_idx]))
-        test_roc_auc.append(roc_auc_score(y_true_test_prob[:, class_idx], y_pred_test_prob[:, class_idx]))
+    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
+    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
+    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
+    val_roc_auc = roc_auc_score(y_true_val, y_pred_val)
+    test_roc_auc = roc_auc_score(y_true_test, y_pred_test)
 
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
+        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_roc_auc, val_acc, val_nll, val_f1, val_roc_auc, test_acc, test_nll, test_f1, test_roc_auc)
     )
-    
-    # Log ROC-AUC scores
-    logger.info("ROC-AUC Scores:")
-    for class_idx in range(num_classes):
-        logger.info("Class {}: Train ROC-AUC: {:.4f} | Val ROC-AUC: {:.4f} | Test ROC-AUC: {:.4f}"
-                    .format(class_idx, train_roc_auc[class_idx], val_roc_auc[class_idx], test_roc_auc[class_idx]))
-    
     if val_acc > log_training_results.best_val_acc:
         logger.info("New checkpoint")
         th.save(
@@ -330,6 +327,7 @@ def log_training_results(trainer):
             )
         )
         log_training_results.best_val_acc = val_acc
+
 
 log_training_results.best_val_acc = 0
 g = update_feature()
