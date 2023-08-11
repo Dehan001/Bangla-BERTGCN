@@ -309,22 +309,27 @@ def log_training_results(trainer):
         y_true_test_prob.extend(y_true.cpu().numpy())
         y_pred_test_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
 
+    # Calculate ROC-AUC scores
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
 
     num_classes = len(np.unique(y_true_train_prob))
     for class_idx in range(num_classes):
-        train_roc_auc.append(roc_auc_score(np.where(y_true_train_prob == class_idx, 1, 0), y_pred_train_prob[:, class_idx]))
-        val_roc_auc.append(roc_auc_score(np.where(y_true_val_prob == class_idx, 1, 0), y_pred_val_prob[:, class_idx]))
-        test_roc_auc.append(roc_auc_score(np.where(y_true_test_prob == class_idx, 1, 0), y_pred_test_prob[:, class_idx]))
-    
-    # Calculate ROC-AUC scores
+        train_mask_class = y_true_train_prob == class_idx
+        val_mask_class = y_true_val_prob == class_idx
+        test_mask_class = y_true_test_prob == class_idx
+
+        train_roc_auc.append(roc_auc_score(train_mask_class, y_pred_train_prob[:, class_idx]))
+        val_roc_auc.append(roc_auc_score(val_mask_class, y_pred_val_prob[:, class_idx]))
+        test_roc_auc.append(roc_auc_score(test_mask_class, y_pred_test_prob[:, class_idx]))
+
+    # Calculate and log ROC-AUC scores
     logger.info("ROC-AUC Scores:")
     for class_idx in range(num_classes):
         logger.info("Class {}: Train ROC-AUC: {:.4f} | Val ROC-AUC: {:.4f} | Test ROC-AUC: {:.4f}"
-                    .format(class_idx, train_roc_auc[class_idx], val_roc_auc[class_idx], test_roc_auc[class_idx]))
-   
+                .format(class_idx, train_roc_auc[class_idx], val_roc_auc[class_idx], test_roc_auc[class_idx]))
+
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
