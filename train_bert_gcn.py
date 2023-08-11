@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from torch.optim import lr_scheduler
 from model import BertGCN, BertGAT
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score
 
 
 parser = argparse.ArgumentParser()
@@ -206,27 +206,16 @@ def train_step(engine, batch):
     optimizer.step()
     g.ndata['cls_feats'].detach_()
     train_loss = loss.item()
-    
     with th.no_grad():
         if train_mask.sum() > 0:
             y_true = y_true.detach().cpu()
             y_pred = y_pred.argmax(axis=1).detach().cpu()
             train_acc = accuracy_score(y_true, y_pred)
-            train_f1 = f1_score(y_true, y_pred, average='weighted')
-            
-            # Calculate ROC-AUC scores
-            num_classes = y_true.shape[1]
-            y_true_prob = y_true.float()
-            y_pred_prob = th.softmax(y_pred, dim=1).cpu().numpy()
-            train_roc_auc = []
-            for class_idx in range(num_classes):
-                train_roc_auc.append(roc_auc_score(y_true_prob[:, class_idx], y_pred_prob[:, class_idx]))
+            train_f1 = f1_score(y_true, y_pred, average='weighted')  # Choose appropriate averaging method
         else:
             train_acc = 1
             train_f1 = 1
-            train_roc_auc = [0] * num_classes  # Placeholder values for ROC-AUC when no positive samples
-            
-    return train_loss, train_acc, train_f1, train_roc_auc
+    return train_loss, train_acc, train_f1
 
 
 trainer = Engine(train_step)
@@ -239,8 +228,6 @@ def reset_graph(trainer):
     th.cuda.empty_cache()
 
 
-from sklearn.metrics import roc_auc_score, f1_score
-
 def test_step(engine, batch):
     global model, g
     with th.no_grad():
@@ -250,21 +237,8 @@ def test_step(engine, batch):
         (idx, ) = [x.to(gpu) for x in batch]
         y_pred = model(g, idx)
         y_true = g.ndata['label'][idx]
-        
-        # Calculate ROC-AUC scores
-        num_classes = y_true.shape[1]
-        y_true_prob = y_true.float()
-        y_pred_prob = th.softmax(y_pred, dim=1).cpu().numpy()
-        roc_auc_scores = []
-        for class_idx in range(num_classes):
-            roc_auc_scores.append(roc_auc_score(y_true_prob[:, class_idx], y_pred_prob[:, class_idx]))
-        
-        # Calculate F1 score
-        y_true_labels = y_true.argmax(dim=1).cpu().numpy()
-        y_pred_labels = y_pred.argmax(dim=1).cpu().numpy()
-        f1 = f1_score(y_true_labels, y_pred_labels, average='weighted')  # Choose appropriate averaging method
-        
-        return y_pred, y_true, f1, roc_auc_scores
+        return y_pred, y_true
+
 
 evaluator = Engine(test_step)
 metrics = {
@@ -285,45 +259,32 @@ def log_training_results(trainer):
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
     
-    # Compute F1-score and ROC-AUC using scikit-learn
+    # Compute F1-score manually using scikit-learn
     y_true_train = []
     y_pred_train = []
     y_true_val = []
     y_pred_val = []
     y_true_test = []
     y_pred_test = []
-    roc_auc_train = []
-    roc_auc_val = []
-    roc_auc_test = []
     
     for batch in idx_loader_train:
-        y_pred, y_true, roc_auc_scores, f1 = test_step(None, batch)
+        y_pred, y_true = test_step(None, batch)
         y_true_train.extend(y_true.cpu().numpy())
         y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
-        roc_auc_train.extend(roc_auc_scores)
     
     for batch in idx_loader_val:
-        y_pred, y_true, roc_auc_scores, f1 = test_step(None, batch)
+        y_pred, y_true = test_step(None, batch)
         y_true_val.extend(y_true.cpu().numpy())
         y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
-        roc_auc_val.extend(roc_auc_scores)
     
     for batch in idx_loader_test:
-        y_pred, y_true, roc_auc_scores, f1 = test_step(None, batch)
+        y_pred, y_true = test_step(None, batch)
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
-        roc_auc_test.extend(roc_auc_scores)
     
     train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
     val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
     test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
-    
-    # Calculate and log ROC-AUC scores
-    logger.info("ROC-AUC Scores:")
-    num_classes = len(np.unique(y_true_train))
-    for class_idx in range(num_classes):
-        logger.info("Class {}: Train ROC-AUC: {:.4f} | Val ROC-AUC: {:.4f} | Test ROC-AUC: {:.4f}"
-                    .format(class_idx, roc_auc_train[class_idx], roc_auc_val[class_idx], roc_auc_test[class_idx]))
     
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
