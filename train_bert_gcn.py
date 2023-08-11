@@ -1,6 +1,3 @@
-#three-five multiclass
-#six-> binary classification
-
 import torch as th
 from transformers import AutoModel, AutoTokenizer
 import torch.nn.functional as F
@@ -19,8 +16,7 @@ import logging
 from datetime import datetime
 from torch.optim import lr_scheduler
 from model import BertGCN, BertGAT
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-
+from sklearn.metrics import accuracy_score, f1_score,roc_auc_score
 
 
 parser = argparse.ArgumentParser()
@@ -240,7 +236,8 @@ def test_step(engine, batch):
         g = g.to(gpu)
         (idx, ) = [x.to(gpu) for x in batch]
         y_pred = model(g, idx)
-        return y_pred, g.ndata['label'][idx]
+        y_true = g.ndata['label'][idx]
+        return y_pred, y_true
 
 
 evaluator = Engine(test_step)
@@ -250,7 +247,6 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -263,6 +259,7 @@ def log_training_results(trainer):
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
     
+    # Compute F1-score manually using scikit-learn
     y_true_train = []
     y_pred_train = []
     y_true_val = []
@@ -273,50 +270,68 @@ def log_training_results(trainer):
     for batch in idx_loader_train:
         y_pred, y_true = test_step(None, batch)
         y_true_train.extend(y_true.cpu().numpy())
-        y_pred_train.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
     
     for batch in idx_loader_val:
         y_pred, y_true = test_step(None, batch)
         y_true_val.extend(y_true.cpu().numpy())
-        y_pred_val.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
     
     for batch in idx_loader_test:
         y_pred, y_true = test_step(None, batch)
         y_true_test.extend(y_true.cpu().numpy())
-        y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
     
-    y_true_train = np.array(y_true_train)
-    y_pred_train = np.array(y_pred_train)
-    y_true_val = np.array(y_true_val)
-    y_pred_val = np.array(y_pred_val)
-    y_true_test = np.array(y_true_test)
-    y_pred_test = np.array(y_pred_test)
+    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
+    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
+    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
+
+    # Calculate ROC-AUC scores
+    y_true_train_prob = []
+    y_pred_train_prob = []
+    y_true_val_prob = []
+    y_pred_val_prob = []
+    y_true_test_prob = []
+    y_pred_test_prob = []
+
+    for batch in idx_loader_train:
+        y_pred, y_true = test_step(None, batch)
+        y_true_train_prob.extend(y_true.cpu().numpy())
+        y_pred_train_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+
+    for batch in idx_loader_val:
+        y_pred, y_true = test_step(None, batch)
+        y_true_val_prob.extend(y_true.cpu().numpy())
+        y_pred_val_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+
+    for batch in idx_loader_test:
+        y_pred, y_true = test_step(None, batch)
+        y_true_test_prob.extend(y_true.cpu().numpy())
+        y_pred_test_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
+
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
-    num_classes = y_true_train.shape[1]
-    for class_idx in range(num_classes):
-        _, y_pred_train_class = test_step(None, (class_idx,))
-        _, y_pred_val_class = test_step(None, (class_idx,))
-        _, y_pred_test_class = test_step(None, (class_idx,))
-        y_pred_train_class = y_pred_train_class[0][:, class_idx].cpu().numpy()
-        y_pred_val_class = y_pred_val_class[0][:, class_idx].cpu().numpy()
-        y_pred_test_class = y_pred_test_class[0][:, class_idx].cpu().numpy()
-    
-        train_roc_auc.append(roc_auc_score(y_true_train[:, class_idx], y_pred_train_class))
-        val_roc_auc.append(roc_auc_score(y_true_val[:, class_idx], y_pred_val_class))
-        test_roc_auc.append(roc_auc_score(y_true_test[:, class_idx], y_pred_test_class))
 
-    # Compute the average ROC-AUC scores
-    train_roc_auc_avg = np.mean(train_roc_auc)
-    val_roc_auc_avg = np.mean(val_roc_auc)
-    test_roc_auc_avg = np.mean(test_roc_auc)
+    num_classes = len(np.unique(y_true_train_prob))
+    for class_idx in range(num_classes):
+        train_roc_auc.append(roc_auc_score(
+            y_true_train_prob == class_idx, y_pred_train_prob[:, class_idx]))
+        val_roc_auc.append(roc_auc_score(
+            y_true_val_prob == class_idx, y_pred_val_prob[:, class_idx]))
+        test_roc_auc.append(roc_auc_score(
+            y_true_test_prob == class_idx, y_pred_test_prob[:, class_idx]))
     
+    # Calculate ROC-AUC scores
+    logger.info("ROC-AUC Scores:")
+    for class_idx in range(num_classes):
+        logger.info("Class {}: Train ROC-AUC: {:.4f} | Val ROC-AUC: {:.4f} | Test ROC-AUC: {:.4f}"
+                    .format(class_idx, train_roc_auc[class_idx], val_roc_auc[class_idx], test_roc_auc[class_idx]))
+   
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, train_roc_auc_avg, val_acc, val_nll, val_f1, val_roc_auc_avg, test_acc, test_nll, test_f1, test_roc_auc_avg)
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
+        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
     )
-    
     if val_acc > log_training_results.best_val_acc:
         logger.info("New checkpoint")
         th.save(

@@ -247,9 +247,6 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-
-from sklearn.metrics import roc_auc_score
-
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -262,6 +259,7 @@ def log_training_results(trainer):
     metrics = evaluator.state.metrics
     test_acc, test_nll = metrics["acc"], metrics["nll"]
     
+    # Compute F1-score manually using scikit-learn
     y_true_train = []
     y_pred_train = []
     y_true_val = []
@@ -272,33 +270,26 @@ def log_training_results(trainer):
     for batch in idx_loader_train:
         y_pred, y_true = test_step(None, batch)
         y_true_train.extend(y_true.cpu().numpy())
-        y_pred_train.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_train.extend(y_pred.argmax(axis=1).cpu().numpy())
     
     for batch in idx_loader_val:
         y_pred, y_true = test_step(None, batch)
         y_true_val.extend(y_true.cpu().numpy())
-        y_pred_val.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_val.extend(y_pred.argmax(axis=1).cpu().numpy())
     
     for batch in idx_loader_test:
         y_pred, y_true = test_step(None, batch)
         y_true_test.extend(y_true.cpu().numpy())
-        y_pred_test.extend(F.softmax(y_pred, dim=1).cpu().numpy())  # Softmax for probabilities
+        y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
     
-    # Calculate ROC-AUC scores for each class separately
-    train_roc_auc = roc_auc_score(y_true_train, y_pred_train, average=None)
-    val_roc_auc = roc_auc_score(y_true_val, y_pred_val, average=None)
-    test_roc_auc = roc_auc_score(y_true_test, y_pred_test, average=None)
-    
-    # Compute the average ROC-AUC scores
-    train_roc_auc_avg = np.mean(train_roc_auc)
-    val_roc_auc_avg = np.mean(val_roc_auc)
-    test_roc_auc_avg = np.mean(test_roc_auc)
+    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
+    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
+    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
     
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f} ROC-AUC: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, train_roc_auc_avg, val_acc, val_nll, val_f1, val_roc_auc_avg, test_acc, test_nll, test_f1, test_roc_auc_avg)
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
+        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
     )
-    
     if val_acc > log_training_results.best_val_acc:
         logger.info("New checkpoint")
         th.save(
