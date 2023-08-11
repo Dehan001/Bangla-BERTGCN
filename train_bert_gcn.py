@@ -325,9 +325,18 @@ def log_training_results(trainer):
     # Calculate ROC-AUC scores
     logger.info("ROC-AUC Scores:")
     for class_idx in range(num_classes):
+        train_roc_auc.append(roc_auc_score(
+            (y_true_train_prob == class_idx).astype(int), y_pred_train_prob[:, class_idx]
+        ))
+        val_roc_auc.append(roc_auc_score(
+            (y_true_val_prob == class_idx).astype(int), y_pred_val_prob[:, class_idx]
+        ))
+        test_roc_auc.append(roc_auc_score(
+            (y_true_test_prob == class_idx).astype(int), y_pred_test_prob[:, class_idx]
+        ))
         logger.info("Class {}: Train ROC-AUC: {:.4f} | Val ROC-AUC: {:.4f} | Test ROC-AUC: {:.4f}"
                     .format(class_idx, train_roc_auc[class_idx], val_roc_auc[class_idx], test_roc_auc[class_idx]))
-   
+     
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
