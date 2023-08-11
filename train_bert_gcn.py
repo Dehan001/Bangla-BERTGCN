@@ -17,7 +17,8 @@ from datetime import datetime
 from torch.optim import lr_scheduler
 from model import BertGCN, BertGAT
 from sklearn.metrics import accuracy_score, f1_score,roc_auc_score
-
+import torch
+from torchmetrics import F1Score, ROCAUCScore
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--max_length', type=int, default=128, help='the input length for bert')
