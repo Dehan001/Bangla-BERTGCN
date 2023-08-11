@@ -247,7 +247,7 @@ metrics = {
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
-    
+
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
@@ -283,9 +283,16 @@ def log_training_results(trainer):
         y_true_test_prob.extend(y_true.cpu().numpy())
         y_pred_test_prob.extend(th.softmax(y_pred, dim=1).cpu().numpy())
 
-    train_f1 = f1_score(y_true_train_prob.argmax(axis=1), np.argmax(y_pred_train_prob, axis=1), average='weighted')
-    val_f1 = f1_score(y_true_val_prob.argmax(axis=1), np.argmax(y_pred_val_prob, axis=1), average='weighted')
-    test_f1 = f1_score(y_true_test_prob.argmax(axis=1), np.argmax(y_pred_test_prob, axis=1), average='weighted')
+    y_true_train_prob = np.array(y_true_train_prob)
+    y_pred_train_prob = np.array(y_pred_train_prob)
+    y_true_val_prob = np.array(y_true_val_prob)
+    y_pred_val_prob = np.array(y_pred_val_prob)
+    y_true_test_prob = np.array(y_true_test_prob)
+    y_pred_test_prob = np.array(y_pred_test_prob)
+    
+    train_f1 = f1_score(y_true_train_prob.argmax(axis=1), y_pred_train_prob.argmax(axis=1), average='weighted')
+    val_f1 = f1_score(y_true_val_prob.argmax(axis=1), y_pred_val_prob.argmax(axis=1), average='weighted')
+    test_f1 = f1_score(y_true_test_prob.argmax(axis=1), y_pred_test_prob.argmax(axis=1), average='weighted')
     
     num_classes = y_true_train_prob.shape[1]
     train_roc_auc = []
