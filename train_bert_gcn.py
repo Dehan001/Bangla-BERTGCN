@@ -296,9 +296,9 @@ def log_training_results(trainer):
     test_roc_auc = []
     num_classes = y_true_train.shape[1]
     for class_idx in range(num_classes):
-        _, y_pred_train_class = test_step(None, (idx,))
-        _, y_pred_val_class = test_step(None, (idx,))
-        _, y_pred_test_class = test_step(None, (idx,))
+        _, y_pred_train_class = test_step(None, (class_idx,))
+        _, y_pred_val_class = test_step(None, (class_idx,))
+        _, y_pred_test_class = test_step(None, (class_idx,))
         y_pred_train_class = y_pred_train_class[0][:, class_idx].cpu().numpy()
         y_pred_val_class = y_pred_val_class[0][:, class_idx].cpu().numpy()
         y_pred_test_class = y_pred_test_class[0][:, class_idx].cpu().numpy()
