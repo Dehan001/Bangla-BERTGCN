@@ -18,7 +18,6 @@ from torch.optim import lr_scheduler
 from model import BertGCN, BertGAT
 from sklearn.metrics import accuracy_score, f1_score,roc_auc_score
 import torch
-from torchmetrics import F1Score, ROCAUCScore
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--max_length', type=int, default=128, help='the input length for bert')
@@ -260,8 +259,7 @@ evaluator = Engine(test_step)
 metrics = {
     'acc': Accuracy(),
     'nll': Loss(th.nn.NLLLoss()),
-    'f1': F1Score(average='macro'),
-    'roc_auc': ROCAUCScore()
+  
 }
 for n, f in metrics.items():
     f.attach(evaluator, n)
