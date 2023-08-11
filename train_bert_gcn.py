@@ -290,15 +290,15 @@ def log_training_results(trainer):
     y_true_test_prob = np.array(y_true_test_prob)
     y_pred_test_prob = np.array(y_pred_test_prob)
     
-    train_f1 = f1_score(y_true_train_prob.argmax(axis=1), y_pred_train_prob.argmax(axis=1), average='weighted')
-    val_f1 = f1_score(y_true_val_prob.argmax(axis=1), y_pred_val_prob.argmax(axis=1), average='weighted')
-    test_f1 = f1_score(y_true_test_prob.argmax(axis=1), y_pred_test_prob.argmax(axis=1), average='weighted')
+    train_f1 = f1_score(y_true_train_prob, y_pred_train_prob.argmax(axis=1), average='weighted')
+    val_f1 = f1_score(y_true_val_prob, y_pred_val_prob.argmax(axis=1), average='weighted')
+    test_f1 = f1_score(y_true_test_prob, y_pred_test_prob.argmax(axis=1), average='weighted')
     
     num_classes = y_true_train_prob.shape[1]
     train_roc_auc = []
     val_roc_auc = []
     test_roc_auc = []
-    
+
     for class_idx in range(num_classes):
         train_roc_auc.append(roc_auc_score(y_true_train_prob[:, class_idx], y_pred_train_prob[:, class_idx]))
         val_roc_auc.append(roc_auc_score(y_true_val_prob[:, class_idx], y_pred_val_prob[:, class_idx]))
