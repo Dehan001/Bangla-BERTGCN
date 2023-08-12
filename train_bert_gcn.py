@@ -291,7 +291,7 @@ def log_training_results(trainer):
     test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
     
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}"
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_macro_f1, train_f1, val_acc, val_nll, val_macro_f1 , val_f1, test_acc, test_nll, test_macro_f1,test_f1)
     )
     if val_acc > log_training_results.best_val_acc:
