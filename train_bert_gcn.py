@@ -211,11 +211,11 @@ def train_step(engine, batch):
             y_true = y_true.detach().cpu()
             y_pred = y_pred.argmax(axis=1).detach().cpu()
             train_acc = accuracy_score(y_true, y_pred)
-            train_f1 = f1_score(y_true, y_pred, average='weighted')  # Choose appropriate averaging method
+            # train_f1 = f1_score(y_true, y_pred, average='weighted')  # Choose appropriate averaging method
         else:
             train_acc = 1
             train_f1 = 1
-    return train_loss, train_acc, train_f1
+    return train_loss, train_acc
 
 
 trainer = Engine(train_step)
@@ -282,13 +282,17 @@ def log_training_results(trainer):
         y_true_test.extend(y_true.cpu().numpy())
         y_pred_test.extend(y_pred.argmax(axis=1).cpu().numpy())
     
+    train_macro_f1 = f1_score(y_true_train, y_pred_train, average='macro')
+    val_macro_f1 = f1_score(y_true_val, y_pred_val, average='macro')
+    test_macro_f1 = f1_score(y_true_test, y_pred_test, average='macro')
+    
     train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
     val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
     test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
     
     logger.info(
-        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} F1: {:.4f}"
-        .format(trainer.state.epoch, train_acc, train_nll, train_f1, val_acc, val_nll, val_f1, test_acc, test_nll, test_f1)
+        "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1{:.4f} F1: {:.4f}"
+        .format(trainer.state.epoch, train_acc, train_nll, train_macro_f1, train_f1, val_acc, val_nll, val_macro_f1 , val_f1, test_acc, test_nll, test_macro_f1,test_f1)
     )
     if val_acc > log_training_results.best_val_acc:
         logger.info("New checkpoint")
