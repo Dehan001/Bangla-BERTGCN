@@ -12,7 +12,7 @@ df = auth
 df = df.append(fake)
 df['headline']=df['headline']+" "+df['content']
 def extract_first_128_words(text):
-    words = text.split()[:100]
+    words = text.split()[:50]
     return ' '.join(words)
 
 # Apply the function to the 'headline' column
