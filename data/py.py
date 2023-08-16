@@ -10,6 +10,7 @@ fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/Labeled
 
 df = auth[:700]
 df = df.append(fake[:100])
+df['headline']=df['headline']+" "+df['content']
 # datapath='/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/Sentiment and emotion/archive(6)/Sentiment.csv'
 
 # try:
@@ -65,9 +66,9 @@ df_corpus.to_csv('BanFake(1).txt', sep='\t', index=True, header=False)
 # df_corpus=df[['ind','Label']]
 # df['text'].to_csv('Emotion.txt', sep='\t')
 # df_corpus=df["Data"]
-df['content'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
+df['headline'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
 
 
 from normalizer import normalize
-df['content'] = df['content'].apply(normalize)
-df['content'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
+df['headline'] = df['headline'].apply(normalize)
+df['headline'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
