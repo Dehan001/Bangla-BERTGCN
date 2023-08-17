@@ -10,7 +10,7 @@ fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/Labeled
 
 df = auth[:3500]
 df = df.append(fake[:500])
-df['headline']=df['headline']+" "+df['content']
+df['headline']=df['headline']+"[SEP]"+df['content']
 def extract_first_128_words(text):
     words = text.split()[:128]
     return ' '.join(words)
