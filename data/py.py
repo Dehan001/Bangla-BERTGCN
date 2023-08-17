@@ -8,11 +8,11 @@ from sklearn.model_selection import train_test_split
 auth=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledAuthentic-7K.csv')
 fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledFake-1K.csv')
 
-df = auth
-df = df.append(fake)
+df = auth[:3500]
+df = df.append(fake[:500])
 df['headline']=df['headline']+" "+df['content']
 def extract_first_128_words(text):
-    words = text.split()[:50]
+    words = text.split()[:128]
     return ' '.join(words)
 
 # Apply the function to the 'headline' column
