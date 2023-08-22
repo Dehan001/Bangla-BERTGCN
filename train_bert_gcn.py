@@ -286,9 +286,9 @@ def log_training_results(trainer):
     val_macro_f1 = f1_score(y_true_val, y_pred_val, average='macro')
     test_macro_f1 = f1_score(y_true_test, y_pred_test, average='macro')
     
-    train_f1 = f1_score(y_true_train, y_pred_train, average='micro')
-    val_f1 = f1_score(y_true_val, y_pred_val, average='micro')
-    test_f1 = f1_score(y_true_test, y_pred_test, average='micro')
+    train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
+    val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
+    test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
     
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}"
