@@ -8,15 +8,20 @@ from sklearn.model_selection import train_test_split
 auth=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledAuthentic-7K.csv')
 fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledFake-1K.csv')
 
-df = auth[:3500]
-df = df.append(fake[:500])
+df = auth
+df = df.append(fake)
 df['headline']=df['headline']+"[SEP]"+df['content']
-def extract_first_128_words(text):
-    words = text.split()[:128]
-    return ' '.join(words)
+df['headline_words'] = df['headline'].str.split()
+
+# Rejoining the first 128 words
+df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:128]))
+
+# def extract_first_128_words(text):
+#     words = text.split()[:128]
+#     return ' '.join(words)
 
 # Apply the function to the 'headline' column
-df['headline'] = df['headline'].apply(extract_first_128_words)
+# df['headline'] = df['headline'].apply(extract_first_128_words)
 
 # datapath='/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/Sentiment and emotion/archive(6)/Sentiment.csv'
 
@@ -73,9 +78,9 @@ df_corpus.to_csv('BanFake(1).txt', sep='\t', index=True, header=False)
 # df_corpus=df[['ind','Label']]
 # df['text'].to_csv('Emotion.txt', sep='\t')
 # df_corpus=df["Data"]
-df['headline'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
+df['128words'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
 
 
 from normalizer import normalize
-df['headline'] = df['headline'].apply(normalize)
-df['headline'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
+df['128words'] = df['128words'].apply(normalize)
+df['128words'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
