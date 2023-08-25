@@ -10,11 +10,11 @@ fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/Labeled
 
 df = auth
 df = df.append(fake)
-df['headline']=df['headline']+"[SEP]"+df['content']
+df['headline']=df['headline']+" [SEP] "+df['content']
 df['headline_words'] = df['headline'].str.split()
 
 # Rejoining the first 128 words
-df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:128]))
+df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:64]))
 
 # def extract_first_128_words(text):
 #     words = text.split()[:128]
