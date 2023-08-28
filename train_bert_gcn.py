@@ -250,6 +250,8 @@ metrics = {
 for n, f in metrics.items():
     f.attach(evaluator, n)
 @trainer.on(Events.EPOCH_COMPLETED)
+accuracys=[]
+losses=[]
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
     metrics = evaluator.state.metrics
@@ -291,7 +293,8 @@ def log_training_results(trainer):
     train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
     val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
     test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
-    
+    accuracys.append(test_acc)
+    losses.append(test_nll)
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_macro_f1, train_f1, val_acc, val_nll, val_macro_f1 , val_f1, test_acc, test_nll, test_macro_f1,test_f1)
@@ -316,3 +319,6 @@ def log_training_results(trainer):
 log_training_results.best_val_acc = 0
 g = update_feature()
 trainer.run(idx_loader, max_epochs=nb_epochs)
+
+print(accuracys)
+print(losses)
