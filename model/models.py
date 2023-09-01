@@ -24,7 +24,7 @@ class BertClassifier(th.nn.Module):
 
 
 class BertGCN(th.nn.Module):
-    def __init__(self, pretrained_model='csebuetnlp/banglabert', nb_class=20, m=0.7, gcn_layers=2, n_hidden=200, dropout=0.5):
+    def __init__(self, pretrained_model='roberta_base', nb_class=20, m=0.7, gcn_layers=2, n_hidden=200, dropout=0.5):
         super(BertGCN, self).__init__()
         self.m = m
         self.nb_class = nb_class
@@ -60,7 +60,7 @@ class BertGCN(th.nn.Module):
         return pred
     
 class BertGAT(th.nn.Module):
-    def __init__(self, pretrained_model='csebuetnlp/banglabert', nb_class=20, m=0.7, gcn_layers=2, heads=8, n_hidden=32, dropout=0.5):
+    def __init__(self, pretrained_model='roberta_base', nb_class=20, m=0.7, gcn_layers=2, heads=8, n_hidden=32, dropout=0.5):
         super(BertGAT, self).__init__()
         self.m = m
         self.nb_class = nb_class
