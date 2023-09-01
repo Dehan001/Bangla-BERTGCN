@@ -5,17 +5,17 @@ from sklearn.model_selection import train_test_split
 # test=pd.read_csv("/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/test.csv")
 # df=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/finaldataset.csv')
 #df_val= pd.read_csv('Val.csv')
-auth=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledAuthentic-7K.csv')
-fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledFake-1K.csv')
+# auth=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledAuthentic-7K.csv')
+# fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledFake-1K.csv')
 
-df = auth
-df = df.append(fake)
-df['headline']=df['headline']+" [SEP] "+df['content']
-df['headline_words'] = df['headline'].str.split()
+# df = auth
+# df = df.append(fake)
+# df['headline']=df['headline']+" [SEP] "+df['content']
+# df['headline_words'] = df['headline'].str.split()
 
 # Rejoining the first 128 words
-df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:64]))
-
+# df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:64]))
+df=pd.read_csv('BanFake.csv')
 # def extract_first_128_words(text):
 #     words = text.split()[:128]
 #     return ' '.join(words)
@@ -33,7 +33,7 @@ df['128words'] = df['headline_words'].apply(lambda words: ' '.join(words[:64]))
 
 
 
-df = df.sample(frac=1).reset_index(drop=True)
+# df = df.sample(frac=1).reset_index(drop=True)
 # df=df.loc[df['lan'] == 'BN']
 
 # df['content']=df['content'][:100]
@@ -78,9 +78,9 @@ df_corpus.to_csv('BanFake(1).txt', sep='\t', index=True, header=False)
 # df_corpus=df[['ind','Label']]
 # df['text'].to_csv('Emotion.txt', sep='\t')
 # df_corpus=df["Data"]
-df['128words'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
+df['text'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
 
 
 from normalizer import normalize
-df['128words'] = df['128words'].apply(normalize)
-df['128words'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
+df['text'] = df['text'].apply(normalize)
+df['text'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
