@@ -34,8 +34,7 @@ parser.add_argument('--gcn_layers', type=int, default=3)
 parser.add_argument('--n_hidden', type=int, default=200, help='the dimension of gcn hidden layer, the dimension for gat is n_hidden * heads')
 parser.add_argument('--heads', type=int, default=8, help='the number of attentionn heads for gat')
 parser.add_argument('--dropout', type=float, default=0.5)
-# parser.add_argument('--gcn_lr', type=float, default=1e-3)
-parser.add_argument('--gcn_lr', type=float, default=0.001)
+parser.add_argument('--gcn_lr', type=float, default=1e-3)
 
 parser.add_argument('--bert_lr', type=float, default=1e-5)
 
@@ -55,9 +54,6 @@ heads = args.heads
 dropout = args.dropout
 gcn_lr = args.gcn_lr
 bert_lr = args.bert_lr
-
-# accuracies=[]
-# losses=[]
 
 if checkpoint_dir is None:
     ckpt_dir = './checkpoint/{}_{}_{}'.format(bert_init, gcn_model, dataset)
@@ -253,7 +249,6 @@ metrics = {
 for n, f in metrics.items():
     f.attach(evaluator, n)
 @trainer.on(Events.EPOCH_COMPLETED)
-
 def log_training_results(trainer):
     evaluator.run(idx_loader_train)
     metrics = evaluator.state.metrics
@@ -295,8 +290,8 @@ def log_training_results(trainer):
     train_f1 = f1_score(y_true_train, y_pred_train, average='weighted')
     val_f1 = f1_score(y_true_val, y_pred_val, average='weighted')
     test_f1 = f1_score(y_true_test, y_pred_test, average='weighted')
-    # accuracies.append(test_acc)
-    # losses.append(test_nll)
+
+
     logger.info(
         "Epoch: {}  Train acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Val acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}  Test acc: {:.4f} loss: {:.4f} macro_F1: {:.4f} F1: {:.4f}"
         .format(trainer.state.epoch, train_acc, train_nll, train_macro_f1, train_f1, val_acc, val_nll, val_macro_f1 , val_f1, test_acc, test_nll, test_macro_f1,test_f1)
@@ -322,5 +317,3 @@ log_training_results.best_val_acc = 0
 g = update_feature()
 trainer.run(idx_loader, max_epochs=nb_epochs)
 
-# print(accuracies)
-# print(losses)
