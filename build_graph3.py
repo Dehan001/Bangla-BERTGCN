@@ -11,12 +11,13 @@ from nltk.corpus import wordnet as wn
 from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
 from scipy.spatial.distance import cosine
-from transformers import AutoTokenizer, AutoModel
-import torch 
+import torch
+from transformers import BertTokenizer, BertModel
 
-model_name = "csebuetnlp/banglabert"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
+# Load the BERT tokenizer and model
+tokenizer = BertTokenizer.from_pretrained("csebuetnlp/banglabert")
+model = BertModel.from_pretrained("csebuetnlp/banglabert")
+
 if len(sys.argv) != 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
@@ -27,11 +28,6 @@ dataset = sys.argv[1]
 if dataset not in datasets:
 	sys.exit("wrong dataset name")
 
-# Read Word Vectors
-# word_vector_file = 'data/glove.6B/glove.6B.300d.txt'
-# word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
-#_, embd, word_vector_map = loadWord2Vec(word_vector_file)
-# word_embeddings_dim = len(embd[0])
 
 word_embeddings_dim = 768
 word_vector_map = {}
@@ -155,62 +151,6 @@ f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
 f.write(vocab_str)
 f.close()
 
-'''
-Word definitions begin
-'''
-'''
-definitions = []
-
-for word in vocab:
-    word = word.strip()
-    synsets = wn.synsets(clean_str(word))
-    word_defs = []
-    for synset in synsets:
-        syn_def = synset.definition()
-        word_defs.append(syn_def)
-    word_des = ' '.join(word_defs)
-    if word_des == '':
-        word_des = '<PAD>'
-    definitions.append(word_des)
-
-string = '\n'.join(definitions)
-
-
-f = open('data/corpus/' + dataset + '_vocab_def.txt', 'w')
-f.write(string)
-f.close()
-
-tfidf_vec = TfidfVectorizer(max_features=1000)
-tfidf_matrix = tfidf_vec.fit_transform(definitions)
-tfidf_matrix_array = tfidf_matrix.toarray()
-print(tfidf_matrix_array[0], len(tfidf_matrix_array[0]))
-
-word_vectors = []
-
-for i in range(len(vocab)):
-    word = vocab[i]
-    vector = tfidf_matrix_array[i]
-    str_vector = []
-    for j in range(len(vector)):
-        str_vector.append(str(vector[j]))
-    temp = ' '.join(str_vector)
-    word_vector = word + ' ' + temp
-    word_vectors.append(word_vector)
-
-string = '\n'.join(word_vectors)
-
-f = open('data/corpus/' + dataset + '_word_vectors.txt', 'w')
-f.write(string)
-f.close()
-
-word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
-_, embd, word_vector_map = loadWord2Vec(word_vector_file)
-word_embeddings_dim = len(embd[0])
-'''
-
-'''
-Word definitions end
-'''
 
 # label list
 label_set = set()
@@ -263,17 +203,14 @@ for i in range(real_train_size):
 x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
     real_train_size, word_embeddings_dim))
 
-import numpy as np
-
-# Initialize an empty list to store BERT embeddings
-bert_embeddings_train = []
+bert_embeddings = []
 
 for i in range(real_train_size):
     doc_meta = shuffle_doc_name_list[i]
     temp = doc_meta.split('\t')
     label = temp[2]
 
-    # Assuming that shuffle_doc_words_list contains your training text data
+    # Assuming that shuffle_doc_words_list contains your text data
     text = shuffle_doc_words_list[i]
 
     # Tokenize the text and get BERT embeddings
@@ -282,12 +219,10 @@ for i in range(real_train_size):
         outputs = model(**tokens)
         text_embedding = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
 
-    bert_embeddings_train.append(text_embedding)
+    bert_embeddings.append(text_embedding)
 
-# Convert the list of BERT embeddings for the training dataset to a NumPy array
-y = np.array(bert_embeddings_train)
-
-print(y)
+# Convert the list of BERT embeddings to a NumPy array
+y = np.array(bert_embeddings)
 
 
 # tx: feature vectors of test docs, no initial features
@@ -318,7 +253,6 @@ tx = sp.csr_matrix((data_tx, (row_tx, col_tx)),
 
 bert_embeddings_test = []
 
-# Iterate through the test dataset
 for i in range(test_size):
     doc_meta = shuffle_doc_name_list[i + train_size]
     temp = doc_meta.split('\t')
@@ -337,8 +271,6 @@ for i in range(test_size):
 
 # Convert the list of BERT embeddings for the test dataset to a NumPy array
 ty = np.array(bert_embeddings_test)
-
-print(ty)
 
 # allx: the the feature vectors of both labeled and unlabeled training instances
 # (a superset of x)
@@ -386,7 +318,6 @@ data_allx = np.array(data_allx)
 allx = sp.csr_matrix(
     (data_allx, (row_allx, col_allx)), shape=(train_size + vocab_size, word_embeddings_dim))
 
-# Initialize an empty list to store BERT embeddings for the training dataset
 bert_embeddings_train = []
 
 # Iterate through the training dataset
@@ -406,18 +337,12 @@ for i in range(train_size):
 
     bert_embeddings_train.append(text_embedding)
 
+# Append zeros for the remaining vocabulary size
+for i in range(vocab_size):
+    bert_embeddings_train.append(np.zeros(768))  # Assuming BERT embeddings are of size 768
+
 # Convert the list of BERT embeddings for the training dataset to a NumPy array
-bert_embeddings_train = np.array(bert_embeddings_train)
-
-# Create an array of zeros for the remaining vocabulary size
-vocab_size_remaining = vocab_size - train_size
-# zeros_for_vocab = np.zeros((vocab_size_remaining, len(label_list)))
-zeros_for_vocab = np.zeros((vocab_size_remaining, 768))
-
-# Concatenate the BERT embeddings and zeros for vocabulary size
-ally = np.concatenate((bert_embeddings_train, zeros_for_vocab), axis=0)
-
-print(ally)
+ally = np.array(bert_embeddings_train)
 
 
 print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
