@@ -1,7 +1,7 @@
 import torch as th
 from transformers import AutoModel, AutoTokenizer
 import torch.nn.functional as F
-from utils1 import *
+from utils import *
 import dgl
 import torch.utils.data as Data
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
