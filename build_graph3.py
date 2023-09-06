@@ -411,7 +411,8 @@ bert_embeddings_train = np.array(bert_embeddings_train)
 
 # Create an array of zeros for the remaining vocabulary size
 vocab_size_remaining = vocab_size - train_size
-zeros_for_vocab = np.zeros((vocab_size_remaining, len(label_list)))
+# zeros_for_vocab = np.zeros((vocab_size_remaining, len(label_list)))
+zeros_for_vocab = np.zeros((vocab_size_remaining, 768))
 
 # Concatenate the BERT embeddings and zeros for vocabulary size
 ally = np.concatenate((bert_embeddings_train, zeros_for_vocab), axis=0)
