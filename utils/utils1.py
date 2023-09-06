@@ -105,9 +105,9 @@ def load_data(dataset_str):
     val_mask = sample_mask(idx_val, 768)
     test_mask = sample_mask(idx_test, 768)
 
-    y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
+    y_train = np.zeros(768)
+    y_val = np.zeros(768)
+    y_test = np.zeros(768)
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
@@ -166,9 +166,9 @@ def load_corpus(dataset_str):
     val_mask = sample_mask(idx_val, 768)
     test_mask = sample_mask(idx_test, 768)
 
-    y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
+    y_train = np.zeros(768)
+    y_val = np.zeros(768)
+    y_test = np.zeros(768)
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
