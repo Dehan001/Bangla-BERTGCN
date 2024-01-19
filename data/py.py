@@ -7,15 +7,15 @@ from sklearn.model_selection import train_test_split
 #df_val= pd.read_csv('Val.csv')
 # auth=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledAuthentic-7K.csv')
 # fake=pd.read_csv('/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/LabeledFake-1K.csv')
-df=pd.read_csv("/home/farhan/Documents/nlp/bertgcn-bangla/BERTGCN/data/BanFake.csv")
+df=pd.read_csv("C:\Users\ndc\Documents\Thesis\experiment5-2\data\BanglaError.csv")
 # df = auth
 # df = df.append(fake)
 # df['headline']=df['headline']+" [SEP] "+df['content']
 # df['headline_words'] = df['headline'].str.split()
 
 # Rejoining the first 128 words
-df['text'] = df['text'].apply(lambda words: ' '.join(words[:128]))
-df=df.head(3000)
+# df['text'] = df['text'].apply(lambda words: ' '.join(words[:128]))
+# df=df.head(3000)
 # def extract_first_128_words(text):
 #     words = text.split()[:128]
 #     return ' '.join(words)
@@ -39,7 +39,7 @@ df=df.head(3000)
 # df['content']=df['content'][:100]
 from sklearn.model_selection import train_test_split
 
-train, test= train_test_split(df, test_size=0.33, random_state=121, stratify=df['label'])
+train, test= train_test_split(df, test_size=0.25, random_state=121, stratify=df['Error'])
 
 
 # list=[df_train,df_test,df_val]
@@ -67,10 +67,11 @@ df1 = pd.concat([train.assign(ind="train"),test.assign(ind="test")])
 
 df1.reset_index(inplace=True)
 # print(df.head())
-df_corpus=df1[['ind','label']]
+df_corpus=df1[['ind','Error']]
+df_corpus1=df1[['ind','Category']]
 # df_corpus.reset_index()
-df_corpus.to_csv('BanFake(1).txt', sep='\t', index=True, header=False)
-
+df_corpus.to_csv('BanglaErrorBin.txt', sep='\t', index=True, header=False)
+df_corpus1.to_csv('BanglaErrorMulti.txt', sep='\t', index=True, header=False)
 # df['Comments'].to_csv('SentNOB.txt', sep='\t')
 # df_corpus=df["Comments"]
 # df['headline'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
@@ -78,9 +79,10 @@ df_corpus.to_csv('BanFake(1).txt', sep='\t', index=True, header=False)
 # df_corpus=df[['ind','Label']]
 # df['text'].to_csv('Emotion.txt', sep='\t')
 # df_corpus=df["Data"]
-df['text'].to_csv('BanFake.txt', sep='\t', index=False, header=False)
+# df['Comment'].to_csv('BanglaErrorBin(1).txt', sep='\t', index=False, header=False)
+# df['Comment'].to_csv('BanglaErrorMulti(1).txt', sep='\t', index=False, header=False)
 
-
-from normalizer import normalize
-df['text'] = df['text'].apply(normalize)
-df['text'].to_csv('BanFake.clean.txt', sep='\t', index=False, header=False)
+# # from normalizer import normalize
+# # df['Comment'] = df['Comment'].apply(normalize)
+# df['Comment'].to_csv('BanglaErrorBin(1).clean.txt', sep='\t', index=False, header=False)
+# df['Comment'].to_csv('BanglaErrorMulti(1).clean.txt', sep='\t', index=False, header=False)

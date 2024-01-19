@@ -20,7 +20,7 @@ parser.add_argument('--max_length', type=int, default=128, help='the input lengt
 parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--nb_epochs', type=int, default=3)
 parser.add_argument('--bert_lr', type=float, default=1e-5)
-parser.add_argument('--dataset', default='Emotion', choices=['Sentiment','BanFake','BengaliHateSpeech','SarcasDetection','Emotion','20ng', 'R8', 'R52', 'ohsumed', 'mr','SentNOB'])
+parser.add_argument('--dataset', default='Emotion', choices=['BanglaErrorBin','BanglaErrorMulti','Sentiment','BanFake','BengaliHateSpeech','SarcasDetection','Emotion','20ng', 'R8', 'R52', 'ohsumed', 'mr','SentNOB'])
 parser.add_argument('--bert_init', type=str, default='csebuetnlp/banglabert',
                     choices=['csebuetnlp/banglabert','roberta-base', 'roberta-large', 'bert-base-uncased', 'bert-large-uncased'])
 parser.add_argument('--checkpoint_dir', default=None, help='checkpoint directory, [bert_init]_[dataset] if not specified')

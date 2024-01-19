@@ -15,7 +15,7 @@ from scipy.spatial.distance import cosine
 if len(sys.argv) != 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
-datasets = ['Sentiment','BanFake','BengaliHateSpeech','SarcasDetection','20ng', 'R8', 'R52', 'ohsumed', 'mr','SentNOB','Emotion']
+datasets = ['BanglaErrorBin','BanglaErrorMulti','Sentiment','BanFake','BengaliHateSpeech','SarcasDetection','20ng', 'R8', 'R52', 'ohsumed', 'mr','SentNOB','Emotion']
 # build corpus
 dataset = sys.argv[1]
 
