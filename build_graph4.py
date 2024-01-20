@@ -214,7 +214,10 @@ Word definitions end
 label_set = set()
 for doc_meta in shuffle_doc_name_list:
     temp = doc_meta.split('\t')
-    label_set.add(temp[2])
+    try:
+        label_set.add(temp[2])
+    except:
+        continue
 label_list = list(label_set)
 
 label_list_str = '\n'.join(label_list)
