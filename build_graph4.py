@@ -1,4 +1,3 @@
-
 import os
 import random
 import numpy as np
@@ -22,12 +21,6 @@ dataset = sys.argv[1]
 
 if dataset not in datasets:
 	sys.exit("wrong dataset name")
-
-# Read Word Vectors
-# word_vector_file = 'data/glove.6B/glove.6B.300d.txt'
-# word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
-#_, embd, word_vector_map = loadWord2Vec(word_vector_file)
-# word_embeddings_dim = len(embd[0])
 
 word_embeddings_dim = 300
 word_vector_map = {}
@@ -212,7 +205,10 @@ Word definitions end
 label_set = set()
 for doc_meta in shuffle_doc_name_list:
     temp = doc_meta.split('\t')
-    label_set.add(temp[2])
+    if len(temp) >= 3:
+       label_set.add(temp[2])
+    else:
+       print(f"Invalid doc_meta format: {doc_meta}")
 label_list = list(label_set)
 
 label_list_str = '\n'.join(label_list)
