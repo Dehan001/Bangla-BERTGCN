@@ -1,3 +1,4 @@
+
 import os
 import random
 import numpy as np
@@ -41,13 +42,10 @@ lines = f.readlines()
 for line in lines:
     doc_name_list.append(line.strip())
     temp = line.split("\t")
-    if len(temp) >= 3:  # Add this check to ensure temp has at least 3 elements
-        if temp[1].find('test') != -1:
-            doc_test_list.append(line.strip())
-        elif temp[1].find('train') != -1:
-            doc_train_list.append(line.strip())
-    else:
-        print(f"Skipping line: {line.strip()}, as it doesn't have enough elements.")
+    if temp[1].find('test') != -1:
+        doc_test_list.append(line.strip())
+    elif temp[1].find('train') != -1:
+        doc_train_list.append(line.strip())
 f.close()
 # print(doc_train_list)
 # print(doc_test_list)
@@ -153,15 +151,68 @@ f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
 f.write(vocab_str)
 f.close()
 
+'''
+Word definitions begin
+'''
+'''
+definitions = []
+
+for word in vocab:
+    word = word.strip()
+    synsets = wn.synsets(clean_str(word))
+    word_defs = []
+    for synset in synsets:
+        syn_def = synset.definition()
+        word_defs.append(syn_def)
+    word_des = ' '.join(word_defs)
+    if word_des == '':
+        word_des = '<PAD>'
+    definitions.append(word_des)
+
+string = '\n'.join(definitions)
+
+
+f = open('data/corpus/' + dataset + '_vocab_def.txt', 'w')
+f.write(string)
+f.close()
+
+tfidf_vec = TfidfVectorizer(max_features=1000)
+tfidf_matrix = tfidf_vec.fit_transform(definitions)
+tfidf_matrix_array = tfidf_matrix.toarray()
+print(tfidf_matrix_array[0], len(tfidf_matrix_array[0]))
+
+word_vectors = []
+
+for i in range(len(vocab)):
+    word = vocab[i]
+    vector = tfidf_matrix_array[i]
+    str_vector = []
+    for j in range(len(vector)):
+        str_vector.append(str(vector[j]))
+    temp = ' '.join(str_vector)
+    word_vector = word + ' ' + temp
+    word_vectors.append(word_vector)
+
+string = '\n'.join(word_vectors)
+
+f = open('data/corpus/' + dataset + '_word_vectors.txt', 'w')
+f.write(string)
+f.close()
+
+word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
+_, embd, word_vector_map = loadWord2Vec(word_vector_file)
+word_embeddings_dim = len(embd[0])
+'''
+
+'''
+Word definitions end
+'''
 
 # label list
 label_set = set()
 for doc_meta in shuffle_doc_name_list:
     temp = doc_meta.split('\t')
-    try:
-        label_set.add(temp[2])
-    except:
-        continue
+    label_set.add(temp[2])
 label_list = list(label_set)
 
 label_list_str = '\n'.join(label_list)
@@ -212,10 +263,7 @@ y = []
 for i in range(real_train_size):
     doc_meta = shuffle_doc_name_list[i]
     temp = doc_meta.split('\t')
-    try:
-        label = temp[2]
-    except:
-        continue
+    label = temp[2]
     one_hot = [0 for l in range(len(label_list))]
     label_index = label_list.index(label)
     one_hot[label_index] = 1
@@ -311,10 +359,7 @@ ally = []
 for i in range(train_size):
     doc_meta = shuffle_doc_name_list[i]
     temp = doc_meta.split('\t')
-    try:
-        label = temp[2]
-    except:
-        continue
+    label = temp[2]
     one_hot = [0 for l in range(len(label_list))]
     label_index = label_list.index(label)
     one_hot[label_index] = 1
