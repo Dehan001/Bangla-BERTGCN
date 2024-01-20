@@ -206,9 +206,11 @@ label_set = set()
 for doc_meta in shuffle_doc_name_list:
     temp = doc_meta.split('\t')
     if len(temp) >= 3:
+       
        label_set.add(temp[2])
     else:
        print(f"Invalid doc_meta format: {doc_meta}")
+       continue 
 label_list = list(label_set)
 
 label_list_str = '\n'.join(label_list)
