@@ -268,7 +268,10 @@ y = []
 for i in range(real_train_size):
     doc_meta = shuffle_doc_name_list[i]
     temp = doc_meta.split('\t')
-    label = temp[2]
+    try:
+        label = temp[2]
+    except:
+        continue
     one_hot = [0 for l in range(len(label_list))]
     label_index = label_list.index(label)
     one_hot[label_index] = 1
