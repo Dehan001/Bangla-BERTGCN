@@ -6282,7 +6282,7 @@
 6281	train	1.0
 6282	train	1.0
 6283	train	0.0
-6284	train	
+6284	train	0.1
 6285	train	1.0
 6286	train	0.0
 6287	train	1.0
