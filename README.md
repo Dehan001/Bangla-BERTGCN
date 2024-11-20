@@ -1,3 +1,4 @@
+<!--
 # BertGCN
 This repo contains code for [BertGCN: Transductive Text Classification by Combining GCN and BERT](https://arxiv.org/abs/2105.05727).
 
@@ -56,3 +57,4 @@ To appear in Findings of ACL 2021
   year={2021}
 }
 ```
+-->
